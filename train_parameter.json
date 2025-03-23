@@ -1,0 +1,24 @@
+{
+    "parameter": {
+        "seed": 123,
+        "label_list": [
+            0,
+            1,
+            2,
+            3
+        ],
+        "trash_bit_num": 2,
+        "train_data_num": 100,
+        "test_data_num": 100,
+        "height": 16,
+        "width": 16,
+        "epoch": 10,
+        "ansatz_dict": {
+            "ansatz_reps": 5,
+            "A": "A-1",
+            "A_gate": "Ry",
+            "B": "B-3",
+            "B_gate": "Ry"
+        }
+    }
+}
