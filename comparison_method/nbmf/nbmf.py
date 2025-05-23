@@ -39,6 +39,13 @@ class NBMF:
 
         print('validation accuracy : ', validation_accuracy)
 
+        total_params = W.shape[0]*W.shape[1] + H.shape[0] # パラメータ数
+        total_zeros = int(W.shape[0]*np.mean(np.sum(H == 0, axis=0))) # Hが0 = 使われなかったパラメータ数 (Hの列平均から算出)
+        sparsity = total_zeros / total_params
+        print('スパース性 : ', sparsity)
+        print(f"総パラメータ数: {total_params}")        
+        print(f"実際のパラメータ数: {total_params - total_zeros}")
+
         return W, H
 
 

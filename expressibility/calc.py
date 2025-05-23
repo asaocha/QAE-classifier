@@ -9,14 +9,13 @@ import numpy as np
 from qiskit import QuantumCircuit
 from qiskit_machine_learning.circuit.library import RawFeatureVector
 
+SEED = 123    
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--savefolder', default='None')
-parser.add_argument('--epoch', default='None')
 args = parser.parse_args()
 
 train_parameter_json_filepath = os.path.join(args.savefolder, "train_parameter.json")
-parameter_savefile_path = f'{args.savefolder}/parameter/{args.epoch}.txt'
 
 ### 学習時のパラメータ 読込
 with open(train_parameter_json_filepath, 'r') as f:
@@ -27,6 +26,8 @@ trash_bit_num = parameter_d["trash_bit_num"]
 height = parameter_d["height"]
 width = parameter_d["width"]
 ansatz_dict = parameter_d["ansatz_dict"]
+
+print(ansatz_dict)
 
 # 潜在状態のビット数：RawFeatureVectorの場合、画素数とラベル数に応じる
 latent_bit_num = int(np.log2(height*width)) - trash_bit_num
@@ -41,10 +42,8 @@ input_circuit = input_circuit.compose(feature_mapping, range(num_qubits))
 input_circuit = input_circuit.compose(target_ansatz, range(num_qubits))
 input_circuit.save_statevector(label='v1')
 
+parameter_num = target_ansatz.num_parameters
 
-seed_list = [123, 456, 789, 312,654]
-
-for seed in seed_list:
-    expressibility = eval_ansatz(input_circuit, data_size, parameter_savefile_path, seed)
-    print(f'seed:{seed}, expressibility:{expressibility}')
+expressibility = eval_ansatz(input_circuit, data_size, parameter_num, SEED)
+print(f'seed:{seed}, expressibility:{expressibility}')
 

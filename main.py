@@ -51,6 +51,7 @@ height = parameter_d["height"]
 width = parameter_d["width"]
 epoch = parameter_d["epoch"]
 ansatz_dict = parameter_d["ansatz_dict"]
+dataset = parameter_d["dataset"]
 
 if 'label_type' in parameter_d:
     label_type = parameter_d["label_type"]
@@ -67,8 +68,7 @@ print(qstate_label_dict)
 
 
 ### MNISTデータセット作成
-train_images, train_labels, parameterized_train_labels, test_images, test_labels, _ = get_mnist_dataset(label_list, train_data_num, test_data_num, qstate_label_dict, trash_bit_num, height, width, label_type, seed)
-
+train_images, train_labels, parameterized_train_labels, test_images, test_labels, _ = get_mnist_dataset(label_list, train_data_num, test_data_num, qstate_label_dict, trash_bit_num, height, width, seed, dataset=dataset)
 ## QAE分類
 if not 'method' in parameter_d:
     # 学習

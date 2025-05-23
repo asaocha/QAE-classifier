@@ -33,9 +33,7 @@ def get_mnist_dataset(label_list, train_data_num, test_data_num,
                       qstate_label_dict,
                       trash_bit_num,
                       height, width,
-                      label_type,
                       seed, 
-                      save_image=False,
                       dataset="digit_mnist"):
 
     np.random.seed(seed)
@@ -43,8 +41,12 @@ def get_mnist_dataset(label_list, train_data_num, test_data_num,
     if dataset == "digit_mnist":
         (x_train, y_train), (x_test, y_test) = mnist.load_data()
     elif dataset == "fashion_mnist":
-        x_train, y_train = load_mnist('../data/fashion', kind='train')
-        x_test, y_test = load_mnist('../data/fashion', kind='t10k')
+        x_train, y_train = load_mnist('./data/fashion', kind='train')
+        x_test, y_test = load_mnist('./data/fashion', kind='t10k')
+    elif dataset == "kuzushiji_mnist":
+        x_train, y_train = load_mnist('./data/kuzushiji', kind='train')
+        x_test, y_test = load_mnist('./data/kuzushiji', kind='t10k')
+    
         
     train_index, test_index = np.array([]), np.array([])
     # 特定のラベルのデータのみ抽出
@@ -65,27 +67,13 @@ def get_mnist_dataset(label_list, train_data_num, test_data_num,
     if dataset == "digit_mnist":
         x_train = np.array([cv2.resize(img, (width, height)) for img in x_train])/256
         x_test = np.array([cv2.resize(img, (width, height)) for img in x_test])/256
-    elif dataset == "fashion_mnist":
+    elif dataset == "fashion_mnist" or dataset == "kuzushiji_mnist":
         x_train = np.array([cv2.resize(img, (width, height)) for img in np.reshape(x_train, (-1, 28, 28))])/256
         x_test = np.array([cv2.resize(img, (width, height)) for img in np.reshape(x_test, (-1, 28, 28))])/256
 
-    # 試しに1枚出力
-    if save_image:
-        plt.imshow(x_train[1])
-        plt.savefig("/workspace/qiskit/qae-classifier/output/mnist/sample.jpg")
-        plt.clf()
-        
     # 画像をflatten
     x_train = x_train.reshape(len(x_train), -1)
     x_test = x_test.reshape(len(x_test), -1)
-    
-    # ピクセルを蛇行して参照
-    """
-    for i in range(x_train.shape[0]):
-        x_train[i] = np.array([np.flip(row) if i%2 != 0 else row for i, row in enumerate(np.array_split(x_train[i], width))]).flatten()
-    for i in range(x_test.shape[0]):
-        x_test[i] = np.array([np.flip(row) if i%2 != 0 else row for i, row in enumerate(np.array_split(x_test[i], width))]).flatten()
-        """
     
     # ラベルからパラメータ行列を作成
     parametrized_y_train = parametrize_labels(y_train, trash_bit_num, qstate_label_dict)

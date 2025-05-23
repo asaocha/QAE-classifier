@@ -102,18 +102,17 @@ To run a baseline method (e.g., `nbmf`, `fcnn`, or `svd`), add `"method": "nbmf"
 
 ### Calculate the expressibility of Ansatz
 ---
-Calculations in the code is based on https://arxiv.org/abs/1905.10876, https://arxiv.org/abs/2003.09887.
+Calculations in the code is based on https://arxiv.org/abs/1905.10876, https://arxiv.org/abs/2003.09887, https://github.com/Saesun-Kim/Quantum_Machine_Learning_Express.
 
 ```bash
-python -m expressibility.calc --savefolder PATH --parameter PATH
+python -m expressibility.calc --savefolder PATH
 ```
 #### Arguments:
 
 - `--savefolder`: Specify a directory path contains existing `train_parameter.json` and trained parameters
-- `--epoch`: Specify an epoch of the trained ansatz parameter to obtain the expressibility
 
 Example:
 
 ```bash
-python -m expressibility.calc --savefolder output/train_result_20250323_142300 --epoch 5000
+python -m expressibility.calc --savefolder output/train_result_20250323_142300
 ```

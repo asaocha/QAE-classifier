@@ -1,53 +1,77 @@
+from qiskit import ClassicalRegister, QuantumRegister, QuantumCircuit
 from qiskit import transpile
-from qiskit_aer import QasmSimulator
+from qiskit_aer import AerSimulator, QasmSimulator
 
 import numpy as np
 from tqdm import tqdm
+from scipy.special import rel_entr
 
 
-def eval_ansatz(ansatz, data_size, parameter_savefile_path, seed, samples=1024):
-    np.random.seed(seed)
-    pqc_integral_value = pqc_integral(ansatz, samples, seed, data_size, parameter_savefile_path)
-    expressibility = np.linalg.norm(haar_integral(ansatz.num_qubits, samples) - pqc_integral_value)
-    return expressibility
+def eval_ansatz(ansatz, data_size, parameter_num, seed):
+
+    n_qubits = ansatz.num_qubits
+
+    ## Haarの算出
+
+    # Possible Bin
+    bins_list = []
+    for i in range(76):
+        bins_list.append((i)/75)
+
+    # Center of the Bean
+    bins_x = []    
+    for i in range(75):
+        bins_x.append(bins_list[1]+bins_list[i])
+
+    def P_harr(l,u,N):
+        return (1-l)**(N-1)-(1-u)**(N-1)
     
+    # Harr historgram
+    P_harr_hist=[]
+    for i in range(75):
+        P_harr_hist.append(P_harr(bins_list[i],bins_list[i+1],16))
 
-def random_unitary(N):
-    Z = np.random.randn(N, N) + 1.0j * np.random.randn(N, N)
-    [Q, R] = np.linalg.qr(Z)
-    D = np.diag(np.diagonal(R) / np.abs(np.diagonal(R)))
-    return np.dot(Q, D)
 
-def haar_integral(num_qubits, samples):
-    N = 2**num_qubits
-    randunit_density = np.zeros((N, N), dtype=complex)
+    nshot = 10000
+    nparam = 2000
+    fidelity=[]
 
-    zero_state = np.zeros(N, dtype=complex)
-    zero_state[0] = 1
-    
-    for _ in tqdm(range(samples)):
-        A = np.matmul(zero_state, random_unitary(N)).reshape(-1,1)
-        randunit_density += np.kron(A, A.conj().T) 
+    for _ in tqdm(range(nparam)):
 
-    randunit_density/=samples
-
-    return randunit_density
-    
-def pqc_integral(ansatze, samples, seed, data_size, parameter_savefile_path):
-    N = ansatze.num_qubits
-    randunit_density = np.zeros((2**N, 2**N), dtype=complex)
-
-    for _ in tqdm(range(samples)):
         input = np.random.rand(data_size)
-        params = np.loadtxt(parameter_savefile_path)
-        ansatz = ansatze.assign_parameters(np.concatenate((input, params)))
+        params = np.random.uniform(0, 2*np.pi, parameter_num) # パラメータをnparam分ランダムに生成
 
-        simulator = QasmSimulator(method='statevector')
-        qct = transpile(ansatz, simulator) # シミュレータ用に回路を変換
-        job = simulator.run(qct, shots=1024, seed_simulator=seed)
-        U = np.asarray(job.result().data(0)['v1']).reshape(-1,1)
+        target_ansatz = ansatz.assign_parameters(np.concatenate((input, params)))
 
-        ### 表現力
-        randunit_density += np.kron(U, U.conj().T)
+        qr = QuantumRegister(n_qubits)
+        cr = ClassicalRegister(n_qubits)
+        qc = QuantumCircuit(qr, cr)
+        qc = qc.compose(target_ansatz, range(n_qubits))
+        qc.measure(qr[:],cr[:])
 
-    return randunit_density/samples
+        simulator = AerSimulator(method='statevector')
+        qct = transpile(qc, simulator) # シミュレータ用に回路を変換
+        qct.save_statevector()
+        job = simulator.run(qct, shots=nshot, seed_simulator=seed)
+
+        result = job.result()
+        
+        count =result.get_counts()
+        zeros = '0'*n_qubits
+        if zeros in count and '1' in count:
+            ratio=count[zeros]/nshot
+        elif zeros in count and '1' not in count:
+            ratio=count[zeros]/nshot
+        else:
+            ratio=0
+        fidelity.append(ratio)
+
+
+    weights = np.ones_like(fidelity)/float(len(fidelity))
+
+    # example of calculating the kl divergence (relative entropy) with scipy
+    P_hist = np.histogram(fidelity, bins=bins_list, weights=weights, range=[0, 1])[0]
+    kl_pq = rel_entr(P_hist, P_harr_hist)
+    express = sum(kl_pq)
+    
+    return express
